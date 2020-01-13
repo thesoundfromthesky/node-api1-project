@@ -1,5 +1,7 @@
 const express = require("express");
+const cors = require("cors");
 const db = require("./data/db");
+
 // implement your API here
 // Inside `index.js` add the code necessary to implement the following _endpoints_:
 
@@ -15,6 +17,7 @@ const port = 8000;
 
 server.use(express.json());
 server.use(express.urlencoded({ extended: true }));
+server.use(cors());
 // | GET    | /api/users     | Returns an array of all the user objects contained in the database.
 // When the client makes a `GET` request to `/api/users`:
 
@@ -22,15 +25,15 @@ server.use(express.urlencoded({ extended: true }));
 //   - respond with HTTP status code `500`.
 //   - return the following JSON object: `{ errorMessage: "The users information could not be retrieved." }`.
 server.get("/api/users", (req, res) => {
-  db.find().then(users => {
-    if (!users) {
+  db.find()
+    .then(users => {
+      res.status(200).json(users);
+    })
+    .catch(err => {
       res.status(500).json({
         errorMessage: "The users information could not be retrieved."
       });
-    } else {
-      res.status(200).json(users);
-    }
-  });
+    });
 });
 
 // | GET    | /api/users/:id | Returns the user object with the specified `id`.
@@ -176,23 +179,27 @@ server.put("/api/users/:id", (req, res) => {
 //   - return the following JSON object: `{ errorMessage: "The user could not be removed" }`.
 server.delete("/api/users/:id", (req, res) => {
   const id = req.params.id;
-  db.findById(id).then(user => {
-    if (!user) {
-      res
-        .status(404)
-        .json({ message: "The user with the specified ID does not exist." });
-    } else {
-      db.remove(id)
-        .then(id => {
-          res.sendStatus(204);
-        })
-        .catch(err => {
-          res
-            .status(500)
-            .json({ errorMessage: "The user could not be removed" });
-        });
-    }
-  });
+  db.findById(id)
+    .then(user => {
+      if (!user) {
+        res
+          .status(404)
+          .json({ message: "The user with the specified ID does not exist." });
+      } else {
+        db.remove(id)
+          .then(id => {
+            res.sendStatus(204);
+          })
+          .catch(err => {
+            res
+              .status(500)
+              .json({ errorMessage: "The user could not be removed" });
+          });
+      }
+    })
+    .catch(err => {
+      res.status(500).json({ errorMessage: "The user could not be removed" });
+    });
 });
 
 server.listen(port, () => {
